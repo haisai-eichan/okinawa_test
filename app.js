@@ -1,4 +1,9 @@
 const gameBoard = document.getElementById('game-board');
+const scoreBoard = document.getElementById('score-board');
+const enemyCount = document.getElementById('enemy-count');
+const messageBox = document.getElementById('message-box');
+const messageText = document.getElementById('message-text');
+const restartButton = document.getElementById('restart-button');
 
 // Player
 const player = document.createElement('div');
@@ -8,6 +13,7 @@ gameBoard.appendChild(player);
 let playerLeft = 275;
 player.style.left = playerLeft + 'px';
 let gameIsOver = false;
+let score = 0;
 
 function movePlayer(e) {
     if (gameIsOver) return;
@@ -37,6 +43,8 @@ for (let i = 0; i < 24; i++) {
     gameBoard.appendChild(invader);
     invaders.push(invader);
 }
+enemyCount.textContent = `Enemies: ${invaders.length}`;
+
 
 let invaderDirection = 1;
 let invaderLeft = 0;
@@ -44,6 +52,9 @@ let invaderTop = 30;
 
 function moveInvaders() {
     if (gameIsOver) return;
+    if (invaders.length === 0) {
+        return;
+    }
     const firstInvader = invaders[0];
     const lastInvader = invaders[invaders.length - 1];
 
@@ -64,6 +75,7 @@ function moveInvaders() {
         const playerRect = player.getBoundingClientRect();
         const invaderRect = invader.getBoundingClientRect();
         if (
+            !invader.classList.contains('dead') &&
             invaderRect.left < playerRect.right &&
             invaderRect.right > playerRect.left &&
             invaderRect.top < playerRect.bottom &&
@@ -71,13 +83,6 @@ function moveInvaders() {
         ) {
             gameOver();
         }
-    }
-
-    // Win condition
-    if (invaders.length === 0) {
-        alert('You win!');
-        gameIsOver = true;
-        clearInterval(invaderInterval);
     }
 }
 
@@ -114,9 +119,29 @@ function fireLaser(e) {
                 ) {
                     laser.remove();
                     invader.classList.add('dead');
-                    invader.remove();
-                    invaders.splice(i, 1);
+                    invader.style.backgroundImage = 'none'; // Hide invader
+                    
+                    setTimeout(() => {
+                        invader.remove();
+                    }, 100);
+
+
+                    const invaderIndex = invaders.indexOf(invader);
+                    if (invaderIndex > -1) {
+                        invaders.splice(invaderIndex, 1);
+                    }
+
+                    score += 100;
+                    scoreBoard.textContent = `Score: ${score}`;
+                    enemyCount.textContent = `Enemies: ${invaders.length}`;
+                    
                     clearInterval(laserInterval);
+
+                    // Win condition
+                    if (invaders.length === 0) {
+                        gameWin();
+                    }
+                    return; 
                 }
             }
 
@@ -170,10 +195,25 @@ function invaderFire() {
     let laserInterval = setInterval(moveLaser, 50);
 }
 
-setInterval(invaderFire, 1000);
+let invaderFireInterval = setInterval(invaderFire, 1000);
 
 function gameOver() {
-    alert('Game Over');
+    if(gameIsOver) return;
     gameIsOver = true;
     clearInterval(invaderInterval);
+    clearInterval(invaderFireInterval);
+    messageText.textContent = 'Game Over';
+    messageBox.classList.remove('hidden');
 }
+
+function gameWin() {
+    gameIsOver = true;
+    clearInterval(invaderInterval);
+    clearInterval(invaderFireInterval);
+    messageText.textContent = 'You Win!';
+    messageBox.classList.remove('hidden');
+}
+
+restartButton.addEventListener('click', () => {
+    location.reload();
+});
